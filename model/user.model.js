@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
       ],
     },
     password: { type: String, select: 0 },
-    username: { type: String, unique: true },
+    username: { type: String },
     phone: { type: String },
 
     avatar: {
