@@ -8,6 +8,7 @@ import {
   getMoodDetails,
   getAverageWeeklyMood,
   getGlassAndWater,
+  getSpecificMoodsByMoodId,
 } from "../controller/mood.controller.js";
 import {
   getSevenDaysInsights,
@@ -40,5 +41,7 @@ router.get("/insights/7days", getSevenDaysInsights);
 router.get("/insights/monthly", getMonthlyInsights);
 router.get("/average-weekly", getAverageWeeklyMood);
 router.get("/glass-sleep", getGlassAndWater);
+
+router.get("/specific-moods/:moodId", protect, getSpecificMoodsByMoodId);
 
 export default router;
