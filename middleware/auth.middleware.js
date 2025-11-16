@@ -2,8 +2,12 @@ import jwt from "jsonwebtoken";
 import httpStatus from "http-status";
 import AppError from "../errors/AppError.js";
 import { User } from "./../model/user.model.js";
+import c from "config";
 
 export const protect = async (req, res, next) => {
+  // console.log("Protect middleware invoked");
+  // console.log(req.body);
+  // console.log(req.headers);
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) throw new AppError(httpStatus.NOT_FOUND, "Token not found");
 

@@ -126,10 +126,13 @@ export const submitMood = catchAsync(async (req, res) => {
 
   const existingLog = await Mood.findOne({ userId, date: { $gte: today } });
   if (existingLog) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "Mood already submitted for today"
-    );
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: "Mood for today already submitted, now submit satisfaction",
+      data: existingLog,
+    });
+    return;
   }
 
   const log = await Mood.create({ userId, date: today, mood, thoughts });
@@ -289,14 +292,14 @@ export const updateTracker = catchAsync(async (req, res) => {
   if (waterGlasses !== undefined) {
     log.waterGlasses = Math.min(
       10,
-      Math.max(0, log.waterGlasses + Number(waterGlasses))
+      Math.max(0,  Number(waterGlasses))
     );
   }
 
   if (sleepHours !== undefined) {
     log.sleepHours = Math.min(
       10,
-      Math.max(0, log.sleepHours + Number(sleepHours))
+      Math.max(0, Number(sleepHours))
     );
   }
 
