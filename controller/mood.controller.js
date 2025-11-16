@@ -396,19 +396,20 @@ export const getMoodDetails = catchAsync(async (req, res) => {
   });
 });
 
-export const getSpecificMoodsByMoodId = catchAsync(async (req, res) => {
+export const getTodayMood = catchAsync(async (req, res) => {
   const userId = req.user._id;
-  const { moodId } = req.params;
 
-  if (!moodId) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Mood ID is required");
-  }
+  const today = new Date();
+  const localDateString = today.toLocaleDateString("en-CA");
 
-  const logs = await Mood.find({ userId, _id: moodId }).select("date");
+  const date = new Date(localDateString);
+
+  const mood = await Mood.findOne({ userId, date }).select("date -_id");
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Mood details fetched successfully by ID",
-    data: logs,
+    message: "Today's mood fetched successfully",
+    data: mood || null,
   });
 });
