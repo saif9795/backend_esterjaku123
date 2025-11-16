@@ -78,12 +78,32 @@ export const submitMood = catchAsync(async (req, res) => {
   const userId = req.user._id;
 
   const validMoods = [
-    "😊 Happy", "❤️ Romantic", "🤩 Excited", "🤪 Weird", "🌈 Hopeful",
-    "😴 Sleepy", "😫 Stressed", "😡 Angry", "😐 Neutral", "😢 Sad",
-    "😌 Relaxed", "💪 Motivated", "✨ Inspired", "🎨 Creative",
-    "🤔 Thoughtful", "🪞 Reflective", "😔 Pensive", "🌙 Dreamy",
-    "🕰️ Nostalgic", "😭 Emotional", "😰 Anxious", "😕 Confused",
-    "😤 Frustrated", "🤡 Silly", "🧐 Curious", "🏞️ Adventurous"
+    "😊 Happy",
+    "❤️ Romantic",
+    "🤩 Excited",
+    "🤪 Weird",
+    "🌈 Hopeful",
+    "😴 Sleepy",
+    "😫 Stressed",
+    "😡 Angry",
+    "😐 Neutral",
+    "😢 Sad",
+    "😌 Relaxed",
+    "💪 Motivated",
+    "✨ Inspired",
+    "🎨 Creative",
+    "🤔 Thoughtful",
+    "🪞 Reflective",
+    "😔 Pensive",
+    "🌙 Dreamy",
+    "🕰️ Nostalgic",
+    "😭 Emotional",
+    "😰 Anxious",
+    "😕 Confused",
+    "😤 Frustrated",
+    "🤡 Silly",
+    "🧐 Curious",
+    "🏞️ Adventurous",
   ];
 
   if (!mood || !validMoods.includes(mood)) {
@@ -116,7 +136,6 @@ export const submitMood = catchAsync(async (req, res) => {
     data: log,
   });
 });
-
 
 // Submit satisfaction
 export const submitSatisfaction = catchAsync(async (req, res) => {
@@ -263,17 +282,11 @@ export const updateTracker = catchAsync(async (req, res) => {
 
   // Update and clamp values between 0–10
   if (waterGlasses !== undefined) {
-    log.waterGlasses = Math.min(
-      10,
-      Math.max(0,  Number(waterGlasses))
-    );
+    log.waterGlasses = Math.min(10, Math.max(0, Number(waterGlasses)));
   }
 
   if (sleepHours !== undefined) {
-    log.sleepHours = Math.min(
-      10,
-      Math.max(0, Number(sleepHours))
-    );
+    log.sleepHours = Math.min(10, Math.max(0, Number(sleepHours)));
   }
 
   await log.save();
@@ -380,5 +393,22 @@ export const getMoodDetails = catchAsync(async (req, res) => {
     success: true,
     message: "Mood details fetched successfully by ID",
     data: enhancedLog,
+  });
+});
+
+export const getSpecificMoodsByMoodId = catchAsync(async (req, res) => {
+  const userId = req.user._id;
+  const { moodId } = req.params;
+
+  if (!moodId) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Mood ID is required");
+  }
+
+  const logs = await Mood.find({ userId, _id: moodId }).select("date");
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Mood details fetched successfully by ID",
+    data: logs,
   });
 });
