@@ -73,58 +73,30 @@ export const satisfactionDetailsMap = {
   },
 };
 
-// Submit mood and thoughts
 export const submitMood = catchAsync(async (req, res) => {
   const { mood, thoughts } = req.body;
   const userId = req.user._id;
 
-  if (
-    !mood ||
-    ![
-      "😊 Happy",
-      "❤️ Romantic",
-      "🤩 Excited",
-      "🤪 Weird",
-      "🌈 Hopeful",
-      "😴 Sleepy",
-      "😫 Stressed",
-      "😡 Angry",
-      "😐 Neutral",
-      "😢 Sad",
-      "😌 Relaxed",
-      "💪 Motivated",
-      "✨ Inspired",
-      "🎨 Creative",
-      "🤔 Thoughtful",
-      "🪞 Reflective",
-      "😔 Pensive",
-      "🌙 Dreamy",
-      "🕰️ Nostalgic",
-      "😭 Emotional",
-      "😰 Anxious",
-      "😕 Confused",
-      "😤 Frustrated",
-      "🤡 Silly",
-      "🧐 Curious",
-      "🏞️ Adventurous",
-      "❤️ Romantic",
-      "🤩 Excited",
-      "🤪 Weird",
-      "🌈 Hopeful",
-      "😴 Sleepy",
-      "😫 Stressed",
-      "😡 Angry",
-      "😐 Neutral",
-      "😢 Sad",
-    ].includes(mood)
-  ) {
+  const validMoods = [
+    "😊 Happy", "❤️ Romantic", "🤩 Excited", "🤪 Weird", "🌈 Hopeful",
+    "😴 Sleepy", "😫 Stressed", "😡 Angry", "😐 Neutral", "😢 Sad",
+    "😌 Relaxed", "💪 Motivated", "✨ Inspired", "🎨 Creative",
+    "🤔 Thoughtful", "🪞 Reflective", "😔 Pensive", "🌙 Dreamy",
+    "🕰️ Nostalgic", "😭 Emotional", "😰 Anxious", "😕 Confused",
+    "😤 Frustrated", "🤡 Silly", "🧐 Curious", "🏞️ Adventurous"
+  ];
+
+  if (!mood || !validMoods.includes(mood)) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid or missing mood");
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Get local date but store as UTC midnight
+  const now = new Date();
+  const localDateString = now.toLocaleDateString("en-CA");
+  const date = new Date(localDateString);
 
-  const existingLog = await Mood.findOne({ userId, date: { $gte: today } });
+  // Check today's entry (UTC-based)
+  const existingLog = await Mood.findOne({ userId, date });
   if (existingLog) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
@@ -132,7 +104,7 @@ export const submitMood = catchAsync(async (req, res) => {
     );
   }
 
-  const log = await Mood.create({ userId, date: today, mood, thoughts });
+  const log = await Mood.create({ userId, date, mood, thoughts });
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -141,6 +113,7 @@ export const submitMood = catchAsync(async (req, res) => {
     data: log,
   });
 });
+
 
 // Submit satisfaction
 export const submitSatisfaction = catchAsync(async (req, res) => {
