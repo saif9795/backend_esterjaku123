@@ -57,19 +57,19 @@ const generateTitle = async (mood, satisfaction) => {
 export const satisfactionDetailsMap = {
   "Very good": {
     type: "Gentle",
-    svg: "https://res.cloudinary.com/dbc8cfqkw/image/upload/v1756543061/Gentle_voindq.png",
+    svg: "https://res.cloudinary.com/dsj7zxc71/image/upload/v1763457595/Gentle_p06k88.png",
   },
   "Not so good": {
     type: "Sad",
-    svg: "https://res.cloudinary.com/dbc8cfqkw/image/upload/v1756543057/Sad_znewue.png",
+    svg: "https://res.cloudinary.com/dsj7zxc71/image/upload/v1763457594/Sad_u4xenl.png",
   },
   "Not good at all": {
     type: "Restore",
-    svg: "https://res.cloudinary.com/dbc8cfqkw/image/upload/v1756543062/Restore_nmakev.png",
+    svg: "https://res.cloudinary.com/dsj7zxc71/image/upload/v1763457595/Restore_awo60i.png",
   },
   Good: {
     type: "Balanced",
-    svg: "https://res.cloudinary.com/dbc8cfqkw/image/upload/v1756543062/Balanced_scieug.png",
+    svg: "https://res.cloudinary.com/dsj7zxc71/image/upload/v1763457595/Balanced_thpp1i.png",
   },
 };
 
