@@ -47,6 +47,8 @@ const moodSchema = new mongoose.Schema(
         "😡 Angry",
         "😐 Neutral",
         "😢 Sad",
+        "😔 Pensive",
+        "🫩 Tired",
       ],
     },
     emojiCode: { type: String },
@@ -59,7 +61,7 @@ const moodSchema = new mongoose.Schema(
     sleepHours: { type: Number, default: 0, min: 0, max: 10 },
     status: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 moodSchema.index({ userId: 1, date: 1 }, { unique: true });

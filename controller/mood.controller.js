@@ -23,7 +23,7 @@ const generateMotivation = async (mood) => {
   } catch (error) {
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "Failed to generate motivational message"
+      "Failed to generate motivational message",
     );
   }
 };
@@ -49,7 +49,7 @@ const generateTitle = async (mood, satisfaction) => {
   } catch (error) {
     throw new AppError(
       httpStatus.INTERNAL_SERVER_ERROR,
-      "Failed to generate daily title"
+      "Failed to generate daily title",
     );
   }
 };
@@ -104,6 +104,8 @@ export const submitMood = catchAsync(async (req, res) => {
     "🤡 Silly",
     "🧐 Curious",
     "🏞️ Adventurous",
+    "😔 Pensive",
+    "🫩 Tired",
   ];
 
   if (!mood || !validMoods.includes(mood)) {
@@ -145,7 +147,7 @@ export const submitSatisfaction = catchAsync(async (req, res) => {
 
   if (
     !["Very good", "Good", "Not so good", "Not good at all"].includes(
-      satisfaction
+      satisfaction,
     )
   ) {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid satisfaction level");
@@ -159,7 +161,7 @@ export const submitSatisfaction = catchAsync(async (req, res) => {
   if (mood.satisfaction) {
     throw new AppError(
       httpStatus.BAD_REQUEST,
-      "Satisfaction already submitted"
+      "Satisfaction already submitted",
     );
   }
 
@@ -358,7 +360,7 @@ export const getMoodDetails = catchAsync(async (req, res) => {
   if (!log) {
     throw new AppError(
       httpStatus.NOT_FOUND,
-      "No mood log found with the specified ID"
+      "No mood log found with the specified ID",
     );
   }
 
