@@ -79,6 +79,7 @@ export const submitMood = catchAsync(async (req, res) => {
 
   const validMoods = [
     "😊 Happy",
+    "🫩 Tired",
     "❤️ Romantic",
     "🤩 Excited",
     "🤪 Weird",
@@ -94,7 +95,6 @@ export const submitMood = catchAsync(async (req, res) => {
     "🎨 Creative",
     "🤔 Thoughtful",
     "🪞 Reflective",
-    "😔 Pensive",
     "🌙 Dreamy",
     "🕰️ Nostalgic",
     "😭 Emotional",
@@ -105,7 +105,6 @@ export const submitMood = catchAsync(async (req, res) => {
     "🧐 Curious",
     "🏞️ Adventurous",
     "😔 Pensive",
-    "🫩 Tired",
   ];
 
   if (!mood || !validMoods.includes(mood)) {
