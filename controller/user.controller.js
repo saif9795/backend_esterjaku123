@@ -8,7 +8,7 @@ import catchAsync from "../utils/catchAsync.js";
 // Get user profile
 export const getProfile = catchAsync(async (req, res) => {
   const user = await User.findById(req.user._id).select(
-    "-password -refreshToken -verificationInfo -password_reset_token"
+    "-password -refreshToken -refreshTokens -verificationInfo -password_reset_token"
   );
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, "User not found");
@@ -28,7 +28,7 @@ export const updateProfile = catchAsync(async (req, res) => {
 
   // Find user
   const user = await User.findById(req.user._id).select(
-    "-password -refreshToken -verificationInfo -password_reset_token"
+    "-password -refreshToken -refreshTokens -verificationInfo -password_reset_token"
   );
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, "User not found");

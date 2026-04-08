@@ -7,8 +7,29 @@ import sendResponse from "../utils/sendResponse.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import { User } from "./../model/user.model.js";
 
+const MAX_REFRESH_TOKENS = 5;
+
+const getStoredRefreshTokens = (user) => {
+  const legacyToken = user.refreshToken ? [user.refreshToken] : [];
+  const tokens = Array.isArray(user.refreshTokens) ? user.refreshTokens : [];
+  return [...new Set([...tokens, ...legacyToken].filter(Boolean))];
+};
+
+const persistRefreshToken = (user, refreshToken) => {
+  const tokens = [...getStoredRefreshTokens(user), refreshToken];
+  user.refreshTokens = [...new Set(tokens.filter(Boolean))].slice(
+    -MAX_REFRESH_TOKENS,
+  );
+  user.refreshToken = refreshToken;
+};
+
+const hasRefreshToken = (user, refreshToken) => {
+  return getStoredRefreshTokens(user).includes(refreshToken);
+};
+
 export const register = catchAsync(async (req, res) => {
-  const { name, email, password, confirmPassword } = req.body;
+  const { name, userName, email, password, confirmPassword } = req.body;
+  const normalizedName = name || userName;
 
   if (!email || !password) {
     throw new AppError(httpStatus.FORBIDDEN, "Please fill in all fields");
@@ -28,7 +49,7 @@ export const register = catchAsync(async (req, res) => {
     );
 
   const user = await User.create({
-    name,
+    name: normalizedName,
     email,
     password,
     verificationInfo: { token: "", verified: true },
@@ -50,7 +71,7 @@ export const register = catchAsync(async (req, res) => {
     process.env.JWT_REFRESH_SECRET,
     process.env.JWT_REFRESH_EXPIRES_IN
   );
-  user.refreshToken = refreshToken;
+  persistRefreshToken(user, refreshToken);
   await user.save();
   user.accessToken = accessToken;
 
@@ -58,7 +79,7 @@ export const register = catchAsync(async (req, res) => {
   userObj.accessToken = accessToken;
 
   sendResponse(res, {
-    statusCode: httpStatus.OK,
+    statusCode: httpStatus.CREATED,
     success: true,
     message: "User registered successfully",
     data: userObj,
@@ -116,7 +137,7 @@ export const login = catchAsync(async (req, res) => {
     process.env.JWT_REFRESH_EXPIRES_IN
   );
 
-  user.refreshToken = refreshToken;
+  persistRefreshToken(user, refreshToken);
   let _user = await user.save();
 
   res.cookie("refreshToken", refreshToken, {
@@ -159,8 +180,7 @@ export const forgetPassword = catchAsync(async (req, res) => {
   user.password_reset_token = otptoken;
   await user.save();
 
-  /////// TODO: SENT EMAIL MUST BE DONE
-  sendEmail(user.email, "Reset Password", `Your OTP is ${otp}`);
+  await sendEmail(user.email, "Reset Password", `Your OTP is ${otp}`);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -286,17 +306,32 @@ export const changePassword = catchAsync(async (req, res) => {
 });
 
 export const refreshToken = catchAsync(async (req, res) => {
-  const { refreshToken } = req.body;
+  const { refreshToken: providedRefreshToken } = req.body;
 
-  if (!refreshToken) {
+  if (!providedRefreshToken) {
     throw new AppError(400, "Refresh token is required");
   }
 
-  const decoded = verifyToken(refreshToken, process.env.JWT_REFRESH_SECRET);
-  const user = await User.findById(decoded._id);
-  if (!user || user.refreshToken !== refreshToken) {
+  let decoded;
+  try {
+    decoded = verifyToken(
+      providedRefreshToken,
+      process.env.JWT_REFRESH_SECRET,
+    );
+  } catch (error) {
     throw new AppError(401, "Invalid refresh token");
   }
+
+  const user = await User.findById(decoded._id);
+  if (!user || !hasRefreshToken(user, providedRefreshToken)) {
+    throw new AppError(401, "Invalid refresh token");
+  }
+
+  if (!user.refreshTokens?.includes(providedRefreshToken)) {
+    persistRefreshToken(user, providedRefreshToken);
+    await user.save();
+  }
+
   const jwtPayload = {
     _id: user._id,
     email: user.email,
@@ -309,19 +344,11 @@ export const refreshToken = catchAsync(async (req, res) => {
     process.env.JWT_ACCESS_EXPIRES_IN
   );
 
-  const refreshToken1 = createToken(
-    jwtPayload,
-    process.env.JWT_REFRESH_SECRET,
-    process.env.JWT_REFRESH_EXPIRES_IN
-  );
-  user.refreshToken = refreshToken1;
-  await user.save();
-
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: "Token refreshed successfully",
-    data: { accessToken: accessToken, refreshToken: refreshToken1 },
+    data: { accessToken: accessToken, refreshToken: providedRefreshToken },
   });
 });
 
@@ -329,7 +356,7 @@ export const logout = catchAsync(async (req, res) => {
   const user = req.user?._id;
   const user1 = await User.findByIdAndUpdate(
     user,
-    { refreshToken: "" },
+    { refreshToken: "", refreshTokens: [] },
     { new: true }
   );
   sendResponse(res, {

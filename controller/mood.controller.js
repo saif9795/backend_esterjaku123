@@ -19,6 +19,24 @@ const getEndOfDay = (baseDate = new Date()) => {
   return end;
 };
 
+const serializeMoodState = (log) => {
+  if (!log) {
+    return null;
+  }
+
+  const data = typeof log.toObject === "function" ? log.toObject() : log;
+  const hasMood = Boolean(data.mood);
+  const hasSatisfaction = Boolean(data.satisfaction);
+
+  return {
+    ...data,
+    hasMood,
+    hasSatisfaction,
+    needsSatisfaction: hasMood && !hasSatisfaction,
+    alreadyCompleted: hasMood && hasSatisfaction,
+  };
+};
+
 // AI=Generated motivation
 const generateMotivation = async (mood) => {
   try {
@@ -142,7 +160,7 @@ export const submitMood = catchAsync(async (req, res) => {
         statusCode: httpStatus.OK,
         success: true,
         message: "Mood submitted successfully, now submit satisfaction",
-        data: existingLog,
+        data: serializeMoodState(existingLog),
       });
       return;
     }
@@ -151,7 +169,7 @@ export const submitMood = catchAsync(async (req, res) => {
       statusCode: httpStatus.OK,
       success: true,
       message: "Mood for today already submitted, now submit satisfaction",
-      data: existingLog,
+      data: serializeMoodState(existingLog),
     });
     return;
   }
@@ -167,7 +185,7 @@ export const submitMood = catchAsync(async (req, res) => {
     statusCode: httpStatus.CREATED,
     success: true,
     message: "Mood submitted successfully, now submit satisfaction",
-    data: log,
+    data: serializeMoodState(log),
   });
 });
 
@@ -355,7 +373,7 @@ export const getGlassAndWater = catchAsync(async (req, res) => {
   const logs = await Mood.findOne({
     userId,
     createdAt: { $gte: startOfDay, $lte: endOfDay },
-  }).select("waterGlasses sleepHours");
+  }).select("_id waterGlasses sleepHours");
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -441,12 +459,12 @@ export const getTodayMood = catchAsync(async (req, res) => {
     date: { $gte: startOfDay, $lte: endOfDay },
   })
     .sort({ createdAt: -1 })
-    .select("date mood satisfaction -_id");
+    .select("_id date mood satisfaction");
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Today's mood fetched successfully",
-    data: mood || null,
+    data: serializeMoodState(mood),
   });
 });

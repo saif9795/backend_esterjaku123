@@ -2,22 +2,22 @@ import jwt from "jsonwebtoken";
 import httpStatus from "http-status";
 import AppError from "../errors/AppError.js";
 import { User } from "./../model/user.model.js";
-import c from "config";
 
 export const protect = async (req, res, next) => {
   // console.log("Protect middleware invoked");
   // console.log(req.body);
   // console.log(req.headers);
   const token = req.headers.authorization?.split(" ")[1];
-  if (!token) throw new AppError(httpStatus.NOT_FOUND, "Token not found");
+  if (!token) throw new AppError(httpStatus.UNAUTHORIZED, "Token not found");
 
   try {
     const decoded = await jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    // console.log(decoded)
     const user = await User.findById(decoded._id);
-    if (user && (await User.isOTPVerified(user._id))) {
-      req.user = user;
+    if (!user || !(await User.isOTPVerified(user._id))) {
+      throw new AppError(httpStatus.UNAUTHORIZED, "Invalid token");
     }
+
+    req.user = user;
     next();
   } catch (err) {
     throw new AppError(401, "Invalid token");

@@ -19,11 +19,13 @@ cron.schedule("59 23 * * *", async () => {
       const moodLog = await Mood.findOne({
         userId: user._id,
         date: { $gte: startOfDay, $lte: endOfDay },
-      }).sort({ createdAt: -1 });
+      })
+        .sort({ createdAt: -1 })
+        .select("_id mood satisfaction");
 
       if (moodLog) {
-        moodLog.status = !!(moodLog.mood && moodLog.satisfaction);
-        await moodLog.save();
+        const status = !!(moodLog.mood && moodLog.satisfaction);
+        await Mood.updateOne({ _id: moodLog._id }, { $set: { status } });
       }
     }
   } catch (err) {

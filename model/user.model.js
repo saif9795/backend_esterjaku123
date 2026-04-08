@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
     },
     password_reset_token: { type: String, default: "" },
     refreshToken: { type: String, default: "" },
+    refreshTokens: { type: [String], default: [] },
     lastActive: { type: Date, default: Date.now },
     dob: { type: Date, default: Date.now },
     deviceToken: { type: String },

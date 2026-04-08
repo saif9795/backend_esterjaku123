@@ -1,22 +1,50 @@
 import nodemailer from "nodemailer";
-export const sendEmail = async (to, subject, html) => {
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
+
+let transporter;
+
+const getTransporter = () => {
+  if (transporter) {
+    return transporter;
+  }
+
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+
+  if (!user || !pass) {
+    throw new Error("SMTP credentials are not configured");
+  }
+
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: String(process.env.SMTP_SECURE || "false") === "true",
     auth: {
-      user: "sajjadhossainx0@gmail.com",
-      pass: "vmmlospccbvrttnc",
+      user,
+      pass,
     },
   });
-  await transporter.sendMail({
-    from: "sajjadhossainx0@gmail.com", // sender address
-    to,
-    subject: subject
-      ? subject
-      : "Password change Link : change it by 10 minutes",
-    html,
-  });
+
+  return transporter;
+};
+
+export const sendEmail = async (to, subject, html) => {
+  try {
+    const mailTransporter = getTransporter();
+    await mailTransporter.sendMail({
+      from:
+        process.env.SMTP_FROM ||
+        process.env.SMTP_USER ||
+        process.env.EMAIL_USER,
+      to,
+      subject: subject
+        ? subject
+        : "Password change Link : change it by 10 minutes",
+      html,
+    });
+  } catch (error) {
+    console.error("Email send failed:", error.message);
+    throw error;
+  }
 };
 
 export const sendMessageTemplate = ({ email, name, phone, message }) => {

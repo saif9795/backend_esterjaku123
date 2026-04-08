@@ -44,8 +44,8 @@ const globalErrorHandler = (err, req, res, next) => {
     success: false,
     message,
     errorSources,
-    err,
-    stack: err?.stack | null,
+    err: process.env.NODE_ENV === "production" ? undefined : err,
+    stack: process.env.NODE_ENV === "production" ? null : err?.stack ?? null,
   });
 };
 
