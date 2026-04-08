@@ -7,23 +7,21 @@ cron.schedule("59 23 * * *", async () => {
   console.log("Running daily mood submission check...");
 
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
 
     const users = await User.find({}, "_id");
 
     for (const user of users) {
-      const moodLog = await Mood.findOne({ userId: user._id, date: today });
+      const moodLog = await Mood.findOne({
+        userId: user._id,
+        date: { $gte: startOfDay, $lte: endOfDay },
+      }).sort({ createdAt: -1 });
 
-      if (!moodLog) {
-        await Mood.create({
-          userId: user._id,
-          date: today,
-          mood: null,
-          satisfaction: null,
-          status: false,
-        });
-      } else {
+      if (moodLog) {
         moodLog.status = !!(moodLog.mood && moodLog.satisfaction);
         await moodLog.save();
       }

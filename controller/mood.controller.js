@@ -7,6 +7,18 @@ import catchAsync from "../utils/catchAsync.js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const getStartOfDay = (baseDate = new Date()) => {
+  const start = new Date(baseDate);
+  start.setHours(0, 0, 0, 0);
+  return start;
+};
+
+const getEndOfDay = (baseDate = new Date()) => {
+  const end = new Date(baseDate);
+  end.setHours(23, 59, 59, 999);
+  return end;
+};
+
 // AI=Generated motivation
 const generateMotivation = async (mood) => {
   try {
@@ -111,16 +123,32 @@ export const submitMood = catchAsync(async (req, res) => {
     throw new AppError(httpStatus.BAD_REQUEST, "Invalid or missing mood");
   }
 
-  // Get local date but store as UTC midnight
-  const now = new Date();
-  const localDateString = now.toLocaleDateString("en-CA");
-  const date = new Date(localDateString);
+  const startOfDay = getStartOfDay();
+  const endOfDay = getEndOfDay();
 
-  // Check today's entry (UTC-based)
-  const existingLog = await Mood.findOne({ userId, date });
+  const existingLog = await Mood.findOne({
+    userId,
+    date: { $gte: startOfDay, $lte: endOfDay },
+  }).sort({ createdAt: -1 });
+
   if (existingLog) {
+    if (!existingLog.mood) {
+      existingLog.mood = mood;
+      existingLog.thoughts = thoughts;
+      existingLog.date = startOfDay;
+      await existingLog.save();
+
+      sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Mood submitted successfully, now submit satisfaction",
+        data: existingLog,
+      });
+      return;
+    }
+
     sendResponse(res, {
-      statusCode: httpStatus.CREATED,
+      statusCode: httpStatus.OK,
       success: true,
       message: "Mood for today already submitted, now submit satisfaction",
       data: existingLog,
@@ -128,7 +156,12 @@ export const submitMood = catchAsync(async (req, res) => {
     return;
   }
 
-  const log = await Mood.create({ userId, date, mood, thoughts });
+  const log = await Mood.create({
+    userId,
+    date: startOfDay,
+    mood,
+    thoughts,
+  });
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -400,12 +433,15 @@ export const getMoodDetails = catchAsync(async (req, res) => {
 export const getTodayMood = catchAsync(async (req, res) => {
   const userId = req.user._id;
 
-  const today = new Date();
-  const localDateString = today.toLocaleDateString("en-CA");
+  const startOfDay = getStartOfDay();
+  const endOfDay = getEndOfDay();
 
-  const date = new Date(localDateString);
-
-  const mood = await Mood.findOne({ userId, date }).select("date -_id");
+  const mood = await Mood.findOne({
+    userId,
+    date: { $gte: startOfDay, $lte: endOfDay },
+  })
+    .sort({ createdAt: -1 })
+    .select("date mood satisfaction -_id");
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
