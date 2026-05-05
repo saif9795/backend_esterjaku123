@@ -1,5 +1,7 @@
 import httpStatus from "http-status";
 import { User } from "../model/user.model.js";
+import { Mood } from "../model/mood.model.js";
+import { Notification } from "../model/notification.model.js";
 import { uploadOnCloudinary } from "../utils/commonMethod.js";
 import AppError from "../errors/AppError.js";
 import sendResponse from "../utils/sendResponse.js";
@@ -162,5 +164,46 @@ export const changePassword = catchAsync(async (req, res) => {
     success: true,
     message: "Password changed successfully",
     data: user,
+  });
+});
+
+// Delete account permanently
+export const deleteAccount = catchAsync(async (req, res) => {
+  const { password } = req.body;
+
+  if (!password) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Password is required to delete your account"
+    );
+  }
+
+  // Fetch user with password field
+  const user = await User.findById(req.user._id).select("+password");
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  // Verify password before deletion
+  const isPasswordValid = await User.isPasswordMatched(password, user.password);
+  if (!isPasswordValid) {
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      "Incorrect password. Account deletion cancelled."
+    );
+  }
+
+  // Delete all related data
+  await Mood.deleteMany({ userId: user._id });
+  await Notification.deleteMany({ userId: user._id });
+
+  // Hard delete the user
+  await User.findByIdAndDelete(user._id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Account deleted successfully. We're sorry to see you go.",
+    data: null,
   });
 });
